@@ -1,0 +1,53 @@
+name: CI
+on:
+  push:
+    branches:
+      - prod
+      - main
+  workflow_dispatch:
+
+env:
+  SQLX_OFFLINE: true
+
+jobs:
+  check:
+    uses: ./.github/workflows/check.yml
+
+build:
+    runs-on: ubuntu-latest
+    needs: [check]
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [aarch64, x86_64]
+    steps:
+      - name: Check out code into the proper directory
+        uses: actions/checkout@v3
+
+      - name: Install cargo
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.arch }}-unknown-linux-musl
+
+      - name: Cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Download musl development toolchain for ${{ matrix.arch }}
+        run: curl -fsSl https://musl.cc/${{ matrix.arch }}-linux-musl-cross.tgz --output ${{ matrix.arch }}-linux-musl-cross.tgz
+
+      - name: Set up musl-${{ matrix.arch }} development toolchain
+        run: tar -xvf ./${{ matrix.arch }}-linux-musl-cross.tgz
+
+      - name: Build executables
+        env:
+          TARGET_CC: ${{ github.workspace }}/${{ matrix.arch }}-linux-musl-cross/bin/${{ matrix.arch }}-linux-musl-cc
+          TARGET_AR: ${{ github.workspace }}/${{ matrix.arch }}-linux-musl-cross/bin/${{ matrix.arch }}-linux-musl-ar
+          RUSTFLAGS: -C linker=${{ github.workspace }}/${{ matrix.arch }}-linux-musl-cross/bin/${{ matrix.arch }}-linux-musl-cc
+        run: cargo b --release --target ${{ matrix.arch }}-unknown-linux-musl
+
+      - name: Upload executables
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.arch }}-executables
+          path: |
+            target/${{ matrix.arch }}-unknown-linux-musl/release/conductor
