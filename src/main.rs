@@ -4,7 +4,6 @@ use axum::{
     extract::{Path, State},
     headers::{authorization::Bearer, Authorization},
     http::StatusCode,
-    routing::get,
     TypedHeader,
 };
 
@@ -18,7 +17,7 @@ async fn main() {
     let config: Config = toml::from_str(&config_str).expect("Invalid config toml");
     let port = config.port;
     let router = axum::Router::new()
-        .route("/:path", get(restart))
+        .route("/:path", axum::routing::any(restart))
         .with_state(Arc::new(config));
     axum::Server::bind(&([0, 0, 0, 0], port).into())
         .serve(router.into_make_service())
