@@ -53,7 +53,7 @@ async fn restart(
             stderr: String::from_utf8_lossy(&output.stderr).into(),
         });
     }
-    Ok((StatusCode::NO_CONTENT, ""))
+    Ok((StatusCode::OK, "Success"))
 }
 
 #[derive(serde::Deserialize)]
