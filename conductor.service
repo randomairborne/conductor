@@ -1,0 +1,9 @@
+[Unit]
+Description=An orchestrator for containers
+
+[Service]
+ExecStart=/usr/bin/conductor
+ExecStop=/bin/kill -2 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
