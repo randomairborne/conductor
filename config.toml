@@ -1,0 +1,5 @@
+port = 8080
+token = "lol"
+
+[prod]
+work = "/Users/gxhut"

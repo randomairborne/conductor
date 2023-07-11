@@ -1,0 +1,11 @@
+[package]
+name = "conductor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "signal"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+axum = { version = "0.6", features = ["headers"] }
+toml = "0.7"
