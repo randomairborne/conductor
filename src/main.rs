@@ -49,12 +49,13 @@ async fn restart(
         .spawn()?;
     let output = pull_task.wait_with_output().await?;
     if !output.status.success() {
-        return Err(Error::PullFailed {
+        Err(Error::PullFailed {
             stdout: String::from_utf8_lossy(&output.stdout).into(),
             stderr: String::from_utf8_lossy(&output.stderr).into(),
-        });
+        })
+    } else {
+        Ok((StatusCode::OK, "Success\n"))
     }
-    Ok((StatusCode::OK, "Success"))
 }
 
 #[derive(serde::Deserialize)]
@@ -72,13 +73,13 @@ pub struct ManagedComposition {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("IO error: {0}")]
+    #[error("I/O error\n")]
     Io(#[from] std::io::Error),
-    #[error("Docker pull failed\nstdout: {stdout}\nstderr: {stderr}")]
+    #[error("Docker pull failed\n")]
     PullFailed { stdout: String, stderr: String },
-    #[error("Unauthorized user attempted to access server")]
+    #[error("Unauthorized user attempted to access server\n")]
     Unauthorized,
-    #[error("No composition found for path `{0}`")]
+    #[error("No composition found for path `{0}`\n")]
     NoComposition(String),
 }
 
@@ -94,11 +95,6 @@ impl axum::response::IntoResponse for Error {
             Error::Unauthorized => StatusCode::UNAUTHORIZED,
             Error::NoComposition(_) => StatusCode::NOT_FOUND,
         };
-        axum::response::Response::builder()
-            .status(status)
-            .body(axum::body::boxed(axum::body::Full::new(
-                "Internal server error".into(),
-            )))
-            .unwrap()
+        (status, self.to_string()).into_response()
     }
 }
