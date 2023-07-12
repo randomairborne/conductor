@@ -42,6 +42,7 @@ async fn restart(
     let pull_task = tokio::process::Command::new("docker")
         .arg("compose")
         .arg("up")
+        .arg("-d")
         .arg("--pull")
         .arg("always")
         .current_dir(&composition.work)
