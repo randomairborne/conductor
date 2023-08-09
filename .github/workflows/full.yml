@@ -48,16 +48,16 @@ jobs:
         run: cargo b --release --target ${{ matrix.arch.rustc }}-unknown-linux-musl
 
       - name: Get package name
-        run: cargo_pkg_name=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .name'`
+        run: export cargo_pkg_name=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .name'`
 
       - name: Get package version
-        run: cargo_pkg_version=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .version'`
+        run: export cargo_pkg_version=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .version'`
 
       - name: Get package authors
-        run: cargo_pkg_authors=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .authors | join(" ")'`
+        run: export cargo_pkg_authors=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .authors | join(" ")'`
 
       - name: Get package description
-        run: cargo_pkg_description=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .description'`
+        run: export cargo_pkg_description=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .description'`
 
       - name: make folders git doesn't store
         run: mkdir -p ./packaging/apt/usr/bin/ && mkdir -p ./packaging/apt/DEBIAN/
