@@ -48,16 +48,16 @@ jobs:
         run: cargo b --release --target ${{ matrix.arch.rustc }}-unknown-linux-musl
 
       - name: Get package name
-        run: cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .name' >> ${{ env.cargo_pkg_name }}
+        run: cargo_pkg_name=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .name'`
 
       - name: Get package version
-        run: cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .version' >> ${{ env.cargo_pkg_version }}
+        run: cargo_pkg_version=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .version'`
 
       - name: Get package authors
-        run: cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .authors | join(" ")' >> ${{ env.cargo_pkg_authors }}
+        run: cargo_pkg_authors=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .authors | join(" ")'`
 
       - name: Get package description
-        run: cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .description' >> ${{ env.cargo_pkg_description }}
+        run: cargo_pkg_description=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .description'`
 
       - name: make folders git doesn't store
         run: mkdir -p ./packaging/apt/usr/bin/ && mkdir -p ./packaging/apt/DEBIAN/
@@ -65,24 +65,24 @@ jobs:
       - name: Generate debian packaging controller
         run: |
           echo "
-          Package: ${{ env.cargo_pkg_name }}
-          Version: ${{ env.cargo_pkg_version }}
-          Maintainer: ${{ env.cargo_pkg_authors }}
+          Package: ${{ cargo_pkg_name }}
+          Version: ${{ cargo_pkg_version }}
+          Maintainer: ${{ cargo_pkg_authors }}
           Architecture: ${{ matrix.arch.debian }}
           Homepage: https://github.com/${{ github.repository }}
-          Description: ${{ env.cargo_pkg_description }}" > ./packaging/apt/DEBIAN/control
+          Description: ${{ cargo_pkg_description }}" > ./packaging/apt/DEBIAN/control
 
       - name: Copy executable for packaging
         run: cp ./target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/conductor ./packaging/apt/usr/bin
 
       - name: Set variable for dpkg directory
-        run: export DEBFILE_DESTINATION="./packaging/${{ env.cargo_pkg_name }}_${{ env.cargo_pkg_version }}-1_${{ matrix.arch.debian }}"
+        run: export debfile_destination="./packaging/${{ env.cargo_pkg_name }}_${{ env.cargo_pkg_version }}-1_${{ matrix.arch.debian }}"
 
       - name: Rename debian file directory
-        run: mv ./packaging/apt $DEBFILE_DESTINATION
+        run: mv ./packaging/apt ${{ debfile_destination }}
 
       - name: Build debfile with dpkg
-        run: dpkg --build $DEBFILE_DESTINATION
+        run: dpkg --build ${{ debfile_destination }}
 
       - name: Upload executables
         uses: actions/upload-artifact@v3
