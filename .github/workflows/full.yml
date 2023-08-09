@@ -19,7 +19,9 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        arch: [aarch64, x86_64]
+        arch:
+          - { rustc: aarch64, debian: arm64 }
+          - { rustc: x86_64, debian: amd64 }
     steps:
       - name: Check out code into the proper directory
         uses: actions/checkout@v3
@@ -27,27 +29,71 @@ jobs:
       - name: Install cargo
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.arch }}-unknown-linux-musl
+          targets: ${{ matrix.arch.rustc }}-unknown-linux-musl
 
       - name: Cache rust
         uses: Swatinem/rust-cache@v2
 
-      - name: Download musl development toolchain for ${{ matrix.arch }}
-        run: curl -fsSl https://musl.cc/${{ matrix.arch }}-linux-musl-cross.tgz --output ${{ matrix.arch }}-linux-musl-cross.tgz
+      - name: Download musl development toolchain for ${{ matrix.arch.rustc }}
+        run: curl -fsSl https://musl.cc/${{ matrix.arch.rustc }}-linux-musl-cross.tgz --output ${{ matrix.arch.rustc }}-linux-musl-cross.tgz
 
-      - name: Set up musl-${{ matrix.arch }} development toolchain
-        run: tar -xvf ./${{ matrix.arch }}-linux-musl-cross.tgz
+      - name: Set up musl-${{ matrix.arch.rustc }} development toolchain
+        run: tar -xvf ./${{ matrix.arch.rustc }}-linux-musl-cross.tgz
 
       - name: Build executables
         env:
-          TARGET_CC: ${{ github.workspace }}/${{ matrix.arch }}-linux-musl-cross/bin/${{ matrix.arch }}-linux-musl-cc
-          TARGET_AR: ${{ github.workspace }}/${{ matrix.arch }}-linux-musl-cross/bin/${{ matrix.arch }}-linux-musl-ar
-          RUSTFLAGS: -C linker=${{ github.workspace }}/${{ matrix.arch }}-linux-musl-cross/bin/${{ matrix.arch }}-linux-musl-cc
-        run: cargo b --release --target ${{ matrix.arch }}-unknown-linux-musl
+          TARGET_CC: ${{ github.workspace }}/${{ matrix.arch.rustc }}-linux-musl-cross/bin/${{ matrix.arch.rustc }}-linux-musl-cc
+          TARGET_AR: ${{ github.workspace }}/${{ matrix.arch.rustc }}-linux-musl-cross/bin/${{ matrix.arch.rustc }}-linux-musl-ar
+          RUSTFLAGS: -C linker=${{ github.workspace }}/${{ matrix.arch.rustc }}-linux-musl-cross/bin/${{ matrix.arch.rustc }}-linux-musl-cc
+        run: cargo b --release --target ${{ matrix.arch.rustc }}-unknown-linux-musl
+
+      - name: Get package name
+        run: cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .name' >> ${{ env.cargo_pkg_name }}
+
+      - name: Get package version
+        run: cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .version' >> ${{ env.cargo_pkg_version }}
+
+      - name: Get package authors
+        run: cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .authors | join(" ")' >> ${{ env.cargo_pkg_authors }}
+
+      - name: Get package description
+        run: cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .description' >> ${{ env.cargo_pkg_description }}
+
+      - name: make folders git doesn't store
+        run: mkdir -p ./packaging/apt/usr/bin/ && mkdir -p ./packaging/apt/DEBIAN/
+
+      - name: Generate debian packaging controller
+        run: |
+          echo "
+          Package: ${{ env.cargo_pkg_name }}
+          Version: ${{ env.cargo_pkg_version }}
+          Maintainer: ${{ env.cargo_pkg_authors }}
+          Architecture: ${{ matrix.arch.debian }}
+          Homepage: https://github.com/${{ github.repository }}
+          Description: ${{ env.cargo_pkg_description }}" > ./packaging/apt/DEBIAN/control
+
+      - name: Copy executable for packaging
+        run: cp ./target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/conductor ./packaging/apt/usr/bin
+
+      - name: Set variable for dpkg directory
+        run: export DEBFILE_DESTINATION="./packaging/${{ env.cargo_pkg_name }}_${{ env.cargo_pkg_version }}-1_${{ matrix.arch.debian }}"
+
+      - name: Rename debian file directory
+        run: mv ./packaging/apt $DEBFILE_DESTINATION
+
+      - name: Build debfile with dpkg
+        run: dpkg --build $DEBFILE_DESTINATION
 
       - name: Upload executables
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.arch }}-executables
+          name: ${{ matrix.arch.rustc }}-executables
           path: |
-            target/${{ matrix.arch }}-unknown-linux-musl/release/conductor
+            target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/conductor
+
+      - name: Upload debfiles
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.arch.rustc }}-deb
+          path: |
+            ${{ env.DEBFILE_DESTINATION }}.deb

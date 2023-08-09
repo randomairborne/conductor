@@ -60,10 +60,15 @@ async fn restart(
 
 #[derive(serde::Deserialize)]
 pub struct Config {
+    #[serde(default = "default_port")]
     port: u16,
     token: String,
     #[serde(flatten)]
     extra: HashMap<String, ManagedComposition>,
+}
+
+fn default_port() -> u16 {
+    8080
 }
 
 #[derive(serde::Deserialize)]
