@@ -65,12 +65,12 @@ jobs:
       - name: Generate debian packaging controller
         run: |
           echo "
-          Package: ${{ cargo_pkg_name }}
-          Version: ${{ cargo_pkg_version }}
-          Maintainer: ${{ cargo_pkg_authors }}
+          Package: ${{ env.cargo_pkg_name }}
+          Version: ${{ env.cargo_pkg_version }}
+          Maintainer: ${{ env.cargo_pkg_authors }}
           Architecture: ${{ matrix.arch.debian }}
           Homepage: https://github.com/${{ github.repository }}
-          Description: ${{ cargo_pkg_description }}" > ./packaging/apt/DEBIAN/control
+          Description: ${{ env.cargo_pkg_description }}" > ./packaging/apt/DEBIAN/control
 
       - name: Copy executable for packaging
         run: cp ./target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/conductor ./packaging/apt/usr/bin
@@ -79,10 +79,10 @@ jobs:
         run: export DEBFILE_DESTINATION="./packaging/${{ env.cargo_pkg_name }}_${{ env.cargo_pkg_version }}-1_${{ matrix.arch.debian }}"
 
       - name: Rename debian file directory
-        run: mv ./packaging/apt ${{ debfile_destination }}
+        run: mv ./packaging/apt ${{ env.debfile_destination }}
 
       - name: Build debfile with dpkg
-        run: dpkg --build ${{ debfile_destination }}
+        run: dpkg --build ${{ env.debfile_destination }}
 
       - name: Upload executables
         uses: actions/upload-artifact@v3
