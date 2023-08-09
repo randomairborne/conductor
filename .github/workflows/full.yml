@@ -48,16 +48,16 @@ jobs:
         run: cargo b --release --target ${{ matrix.arch.rustc }}-unknown-linux-musl
 
       - name: Get package name
-        run: export cargo_pkg_name=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .name'`
+        run: export CARGO_PKG_NAME=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .name'`
 
       - name: Get package version
-        run: export cargo_pkg_version=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .version'`
+        run: export CARGO_PKG_VERSION=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .version'`
 
       - name: Get package authors
-        run: export cargo_pkg_authors=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .authors | join(" ")'`
+        run: export CARGO_PKG_AUTHORS=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .authors | join(" ")'`
 
       - name: Get package description
-        run: export cargo_pkg_description=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .description'`
+        run: export CARGO_PKG_DESCRIPTION=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .description'`
 
       - name: make folders git doesn't store
         run: mkdir -p ./packaging/apt/usr/bin/ && mkdir -p ./packaging/apt/DEBIAN/
@@ -76,7 +76,7 @@ jobs:
         run: cp ./target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/conductor ./packaging/apt/usr/bin
 
       - name: Set variable for dpkg directory
-        run: export debfile_destination="./packaging/${{ env.cargo_pkg_name }}_${{ env.cargo_pkg_version }}-1_${{ matrix.arch.debian }}"
+        run: export DEBFILE_DESTINATION="./packaging/${{ env.cargo_pkg_name }}_${{ env.cargo_pkg_version }}-1_${{ matrix.arch.debian }}"
 
       - name: Rename debian file directory
         run: mv ./packaging/apt ${{ debfile_destination }}
