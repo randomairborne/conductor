@@ -73,27 +73,33 @@ jobs:
           Description: ${{ env.CARGO_PKG_DESCRIPTION }}" >> ./packaging/apt/DEBIAN/control
 
       - name: Copy executable for packaging
-        run: cp ./target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/conductor ./packaging/apt/usr/bin
+        run: cp ./target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/${{ env.CARGO_PKG_NAME }} ./packaging/apt/usr/bin
 
-      - name: Set variable for dpkg directory
-        run: echo "DEBFILE_DESTINATION=./packaging/${{ env.CARGO_PKG_NAME }}_${{ env.CARGO_PKG_VERSION }}-1_${{ matrix.arch.debian }}" >> $GITHUB_ENV
+      - name: Set deb filename
+        run: echo "DEBFILE_NAME=${{ env.CARGO_PKG_NAME }}_${{ env.CARGO_PKG_VERSION }}-1_${{ matrix.arch.debian }}" >> $GITHUB_ENV
 
       - name: Rename debian file directory
-        run: mv ./packaging/apt ${{ env.DEBFILE_DESTINATION }}
+        run: mv ./packaging/apt ./packaging/${{ env.DEBFILE_DESTINATION }}
 
       - name: Build debfile with dpkg
-        run: dpkg --build ${{ env.DEBFILE_DESTINATION }}
+        run: dpkg --build ./packaging/${{ env.DEBFILE_DESTINATION }}
 
       - name: Upload executables
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.arch.rustc }}-executables
           path: |
-            target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/conductor
+            target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/${{ env.CARGO_PKG_NAME }}
 
-      - name: Upload debfiles
+      - name: Upload debfiles to packgerepo
+        uses: cloudflare/wrangler-action@v3
+        with:
+          command: r2 object put apt-repository/${{ env.DEBFILE_NAME }}
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Upload debfiles to GitHub
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.arch.rustc }}-deb
           path: |
-            ${{ env.DEBFILE_DESTINATION }}.deb
+            ./packaging/${{ env.DEBFILE_NAME }}.deb
