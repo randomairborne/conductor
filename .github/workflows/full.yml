@@ -79,10 +79,10 @@ jobs:
         run: echo "DEBFILE_NAME=${{ env.CARGO_PKG_NAME }}_${{ env.CARGO_PKG_VERSION }}-1_${{ matrix.arch.debian }}" >> $GITHUB_ENV
 
       - name: Rename debian file directory
-        run: mv ./packaging/apt ./packaging/${{ env.DEBFILE_DESTINATION }}
+        run: mv ./packaging/apt ./packaging/${{ env.DEBFILE_NAME }}
 
       - name: Build debfile with dpkg
-        run: dpkg --build ./packaging/${{ env.DEBFILE_DESTINATION }}
+        run: dpkg --build ./packaging/${{ env.DEBFILE_NAME }}
 
       - name: Upload executables
         uses: actions/upload-artifact@v3
