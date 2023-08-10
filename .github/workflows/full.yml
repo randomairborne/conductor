@@ -91,12 +91,6 @@ jobs:
           path: |
             target/${{ matrix.arch.rustc }}-unknown-linux-musl/release/${{ env.CARGO_PKG_NAME }}
 
-      - name: Upload debfiles to packgerepo
-        uses: cloudflare/wrangler-action@v3
-        with:
-          command: r2 object put apt-repository/${{ env.DEBFILE_NAME }}
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-
       - name: Upload debfiles to GitHub
         uses: actions/upload-artifact@v3
         with:
