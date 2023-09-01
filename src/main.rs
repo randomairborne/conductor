@@ -37,7 +37,7 @@ async fn restart(
         return Err(Error::Unauthorized);
     }
     let Some(composition) = state.extra.get(&name) else {
-        return Err(Error::NoComposition(name))
+        return Err(Error::NoComposition(name));
     };
     let pull_task = tokio::process::Command::new("docker")
         .arg("compose")
