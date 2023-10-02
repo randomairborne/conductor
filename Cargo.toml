@@ -10,4 +10,4 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "si
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 axum = { version = "0.6", features = ["headers"] }
-toml = "0.7"
+toml = "0.8"
