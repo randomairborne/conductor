@@ -63,6 +63,8 @@ pub struct Config {
     #[serde(default = "default_port")]
     port: u16,
     token: String,
+    force_update_interval: Option<usize>,
+    prune_interval: Option<usize>,
     #[serde(flatten)]
     extra: HashMap<String, ManagedComposition>,
 }
