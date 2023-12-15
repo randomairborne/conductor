@@ -1,5 +1,7 @@
 port = 8080
 token = "lol"
+force_update_interval = 86400
+prune_interval = 604800
 
 [prod]
 work = "/Users/valk"
