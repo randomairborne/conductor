@@ -45,7 +45,7 @@ jobs:
         env:
           TARGET_CC: ${{ github.workspace }}/${{ matrix.arch.rustc }}-linux-musl-cross/bin/${{ matrix.arch.rustc }}-linux-musl-cc
           TARGET_AR: ${{ github.workspace }}/${{ matrix.arch.rustc }}-linux-musl-cross/bin/${{ matrix.arch.rustc }}-linux-musl-ar
-          RUSTFLAGS: -C linker=${{ github.workspace }}/${{ matrix.arch.rustc }}-linux-musl-cross/bin/${{ matrix.arch.rustc }}-linux-musl-cc
+          RUSTFLAGS: -C linker=${{ github.workspace }}/${{ matrix.arch.rustc }}-linux-musl-cross/bin/${{ matrix.arch.rustc }}-linux-musl-cc -C target-feature=+crt-static
 
       - name: Get package name
         run: echo CARGO_PKG_NAME=`cargo metadata --format-version 1 | jq -r '.resolve.root as $root | .packages[] | select(.id==$root) .name'` >> $GITHUB_ENV
