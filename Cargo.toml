@@ -7,7 +7,9 @@ description = "A little utility to restart your docker compose projects"
 
 [dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "signal"] }
+axum-extra = { version = "0.9.1", features = ["typed-header"] }
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
-axum = { version = "0.6", features = ["headers"] }
+axum = "0.7"
 toml = "0.8"
+vss = "0.1"

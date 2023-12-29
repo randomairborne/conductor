@@ -1,12 +1,14 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
 
 use axum::{
     extract::{Path, State},
-    headers::{authorization::Bearer, Authorization},
     http::StatusCode,
+};
+use axum_extra::{
+    headers::{authorization::Bearer, Authorization},
     TypedHeader,
 };
-use tokio::{select, task::JoinSet, time::MissedTickBehavior};
+use tokio::{net::TcpListener, select, task::JoinSet, time::MissedTickBehavior};
 
 #[tokio::main]
 async fn main() {
@@ -25,14 +27,14 @@ async fn main() {
         workers.spawn(prune(secs));
     }
     let port = config.port;
-    let router = axum::Router::new()
+    let app = axum::Router::new()
         .route("/:path", axum::routing::any(restart_web))
         .with_state(config);
-    axum::Server::bind(&([0, 0, 0, 0], port).into())
-        .serve(router.into_make_service())
-        .with_graceful_shutdown(async {
-            tokio::signal::ctrl_c().await.unwrap();
-        })
+    let bind_address = SocketAddr::from(([0, 0, 0, 0], port));
+    println!("Starting server on http://localhost:8080");
+    let tcp = TcpListener::bind(bind_address).await.unwrap();
+    axum::serve(tcp, app)
+        .with_graceful_shutdown(vss::shutdown_signal())
         .await
         .unwrap();
     while let Some(val) = workers.join_next().await {
@@ -66,7 +68,7 @@ async fn restart_all(secs: u64, config: Arc<Config>) {
         select! {
             _ = tokio::signal::ctrl_c() => break,
             _ = ticker.tick() => {}
-        };
+        }
         for name in config.extra.keys() {
             if let Err(source) = restart(name, config.clone()).await {
                 eprintln!("error: {source:?}")
@@ -106,7 +108,7 @@ async fn prune(secs: u64) {
         select! {
             _ = tokio::signal::ctrl_c() => break,
             _ = ticker.tick() => {}
-        };
+        }
         if let Err(source) = do_prune().await {
             eprintln!("error: {source:?}")
         }
