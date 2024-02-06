@@ -71,7 +71,7 @@ async fn restart_all(secs: u64, config: Arc<Config>) {
         }
         for name in config.extra.keys() {
             if let Err(source) = restart(name, config.clone()).await {
-                eprintln!("error: {source:?}")
+                eprintln!("Error: {source:?}")
             }
         }
     }
@@ -110,7 +110,7 @@ async fn prune(secs: u64) {
             _ = ticker.tick() => {}
         }
         if let Err(source) = do_prune().await {
-            eprintln!("error: {source:?}")
+            eprintln!("Error: {source:?}")
         }
     }
 }
@@ -169,7 +169,7 @@ pub enum Error {
 
 impl axum::response::IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
-        eprintln!("{self:?}");
+        eprintln!("Error: `{self:?}`");
         let status = match self {
             Error::Io(_) | Error::PullFailed { .. } | Error::PruneFailed { .. } => {
                 StatusCode::INTERNAL_SERVER_ERROR
